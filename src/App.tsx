@@ -1,56 +1,76 @@
 import { observer } from "mobx-react-lite";
 import { useStore } from "./store";
 import "./App.css";
-import { createPasskeyCredential, getPublicKeyFromBytes, authentication } from "./utils/webauthn";
+import { createPasskeyCredential } from "./utils/webauthn";
+import { useEffect } from "react";
+import { WebauthnSigner } from "./utils/userop";
+import { Client, Presets } from "userop";
+import { SmartAccount } from "smart-accounts/src/userop-builder";
 
 const App = observer(() => {
   const { base } = useStore();
 
-  const getPasskey = async () => {
+  useEffect(() => {
     const storedKeyJson = localStorage.getItem("smart-accounts:key");
     if (storedKeyJson != null) {
-      const storedKey = JSON.parse(storedKeyJson);
-      const pubKey = await getPublicKeyFromBytes(storedKey.registration);
-      base.key = `${storedKey.registration.credential.id}-${pubKey}`;
+      base.storedPasskeys = JSON.parse(storedKeyJson);
     }
-  };
+  }, [base]);
 
   const createPasskey = async () => {
-    const cert = await createPasskeyCredential("SmartAccounts");
-    localStorage.setItem("smart-accounts:key", JSON.stringify(cert));
-    console.log(cert);
+    const credential = await createPasskeyCredential("SmartAccounts");
+    localStorage.setItem("smart-accounts:key", JSON.stringify(credential));
+    base.storedPasskeys = credential;
   };
 
-  const signMessage = async () => {
-    const storedKeyJson = localStorage.getItem("smart-accounts:key");
-    if (storedKeyJson != null) {
-      const message = '0x4a00c3f66a03ce511192d5a3087131d3e659049dbd4e5130c67a0176479cf2c0';
-      const storedKey = JSON.parse(storedKeyJson);
-      const sig = await authentication(storedKey.registration.credential.id, message);
-      base.signature = sig;
-      return;
+  const createAccount = async () => {
+    if (!base.storedPasskeys) {
+      throw Error('create passkeys first');
     }
-    throw new Error('No passkeys');
+    const signer = new WebauthnSigner(
+      base.storedPasskeys.registration,
+      "0xe2C03A87C78783d85C263B020E9AeFDa3525d69c"
+    )
+
+    const client = await Client.init("https://babel-api.testnet.iotex.io", {
+      entryPoint: "0xc3527348De07d591c9d567ce1998eFA2031B8675",
+      overrideBundlerRpc: "https://bundler.testnet.w3bstream.com",
+    })
+    const accountBuilder = await SmartAccount.init(signer, "https://babel-api.testnet.iotex.io", {
+      overrideBundlerRpc: "https://bundler.testnet.w3bstream.com",
+      entryPoint: "0xc3527348De07d591c9d567ce1998eFA2031B8675",
+      factory: "0x6D7746E6fFfaddC9E71f7f633b85A1053EABdc10",
+      paymasterMiddleware: Presets.Middleware.verifyingPaymaster(
+        "https://paymaster.testnet.w3bstream.com/rpc/d98ecac885f4406d87517263b83cb237",
+        ""
+      ),
+    })
+    // stub signature
+    accountBuilder.setSignature("0x" + "0".repeat(1280));
+
+    const response = await client.sendUserOperation(accountBuilder)
+    console.log(`create account ophash: ${response.userOpHash}`);
+    const userOperationEvent = await response.wait();
+    console.log(`create account txhash: ${userOperationEvent?.transactionHash}`);
+    localStorage.setItem("smart-accounts:account:4690", accountBuilder.getSender());
+    base.account = accountBuilder.getSender();
   };
 
   return (
     <>
       <h1>Passkeys demo</h1>
       <p>
-        Created passkeys: {base.key}
+        Created Passkeys: {base.storedPasskeys? ( base.storedPasskeys.registration.credential.id ) : 'None'}
       </p>
       <p>
-        Signature: {base.signature}
+        Created Account: {base.account? ( base.account ) : 'None'}
       </p>
       <div className="card">
         <p>
           <button onClick={createPasskey}>Create Passkeys</button>
         </p>
         <p>
-          <button onClick={getPasskey}>Get stored passkeys</button>
-        </p>
-        <p>
-          <button onClick={signMessage}>Sign message</button>
+          <button onClick={createAccount}>Create Passkeys Account</button>
         </p>
       </div>
     </>

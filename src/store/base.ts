@@ -1,3 +1,4 @@
+import { RegistrationEncoded } from "@passwordless-id/webauthn/dist/esm/types";
 import { makeAutoObservable } from "mobx";
 
 export class BaseStore {
@@ -5,6 +6,7 @@ export class BaseStore {
     makeAutoObservable(this);
   }
 
-  key: string = '';
+  account = '';
+  storedPasskeys: { challenge: string; registration: RegistrationEncoded; } | null = null;
   signature: string = '';
 }
