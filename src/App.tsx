@@ -15,11 +15,17 @@ const App = observer(() => {
     if (storedKeyJson != null) {
       base.storedPasskeys = JSON.parse(storedKeyJson);
     }
+    const account = localStorage.getItem("smart-accounts:account:4690");
+    if (account != null) {
+      base.account = account;
+    }
   }, [base]);
 
   const createPasskey = async () => {
     const credential = await createPasskeyCredential("SmartAccounts");
     localStorage.setItem("smart-accounts:key", JSON.stringify(credential));
+    localStorage.removeItem("smart-accounts:account:4690");
+    base.account = '';
     base.storedPasskeys = credential;
   };
 
