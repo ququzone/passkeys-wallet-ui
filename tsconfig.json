@@ -16,9 +16,7 @@
 
     /* Linting */
     "strict": true,
-    "noUnusedLocals": true,
-    "noUnusedParameters": true,
-    "noFallthroughCasesInSwitch": true,
+    "noFallthroughCasesInSwitch": true
   },
   "include": ["src", "temp"],
   "references": [{ "path": "./tsconfig.node.json" }]
