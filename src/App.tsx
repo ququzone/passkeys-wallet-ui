@@ -51,8 +51,6 @@ const App = observer(() => {
         ""
       ),
     })
-    // stub signature
-    accountBuilder.setSignature("0x" + "0".repeat(1280));
 
     const response = await client.sendUserOperation(accountBuilder)
     console.log(`create account ophash: ${response.userOpHash}`);

@@ -41,6 +41,7 @@ export const authentication = async (credentialId: string, message: BytesLike | 
   const challengeSuffix = clientDataJSON.substring(challengePos + challenge.length);
   const authenticatorData = new Uint8Array(utils.parseBase64url(authenticationEncoded.authenticatorData));
   const signature = getMessageSignature(authenticationEncoded.signature);
+  console.log(clientDataJSON);
 
   return defaultAbiCoder.encode(
     ['bytes', 'bytes', 'string', 'string'],

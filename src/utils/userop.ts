@@ -12,6 +12,10 @@ export class WebauthnSigner implements Signer {
     this.validatorAddr = address
   }
 
+  signatureLength(): number {
+    return 1280
+  }
+
   address(): string {
     return this.validatorAddr
   }
