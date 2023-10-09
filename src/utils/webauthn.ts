@@ -1,5 +1,5 @@
 import { v4 as uuidv4 } from "uuid";
-import base64url from 'base64url';
+import { Buffer } from "buffer";
 import { ECDSASigValue } from '@peculiar/asn1-ecc';
 import { AsnParser } from '@peculiar/asn1-schema';
 import { BigNumber } from 'ethers';
@@ -41,7 +41,6 @@ export const authentication = async (credentialId: string, message: BytesLike | 
   const challengeSuffix = clientDataJSON.substring(challengePos + challenge.length);
   const authenticatorData = new Uint8Array(utils.parseBase64url(authenticationEncoded.authenticatorData));
   const signature = getMessageSignature(authenticationEncoded.signature);
-  console.log(clientDataJSON);
 
   return defaultAbiCoder.encode(
     ['bytes', 'bytes', 'string', 'string'],
@@ -56,13 +55,13 @@ export const getPublicKeyFromBytes = async (registration: RegistrationEncoded): 
     namedCurve: 'P-256',
     hash: 'SHA-256',
   }
-  const pkeybytes = base64url.toBuffer(parsedData.credential.publicKey);
+  const pkeybytes = utils.parseBase64url(parsedData.credential.publicKey);
   const pkey = await crypto.subtle.importKey('spki', pkeybytes, cap, true, ['verify']);
   const jwk = await crypto.subtle.exportKey('jwk', pkey);
   if (jwk.x && jwk.y) {
     return defaultAbiCoder.encode(
       ['uint256', 'uint256'],
-      [BigNumber.from(base64url.toBuffer(jwk.x)), BigNumber.from(base64url.toBuffer(jwk.y))]
+      [BigNumber.from(Buffer.from(utils.parseBase64url(jwk.x))), BigNumber.from(Buffer.from(utils.parseBase64url(jwk.y)))]
     );
   }
   throw new Error('Invalid public key');
@@ -70,7 +69,7 @@ export const getPublicKeyFromBytes = async (registration: RegistrationEncoded): 
 
 export const getMessageSignature = (authResponseSignature: string): string => {
   const parsedSignature = AsnParser.parse(
-    base64url.toBuffer(authResponseSignature),
+    utils.parseBase64url(authResponseSignature),
     ECDSASigValue,
   );
 
