@@ -1,4 +1,5 @@
 import { RegistrationEncoded } from "@passwordless-id/webauthn/dist/esm/types";
+import { ethers } from "ethers";
 import { makeAutoObservable } from "mobx";
 
 export class BaseStore {
@@ -13,5 +14,5 @@ export class BaseStore {
   account = '';
   messages: string[] = [];
   storedPasskeys: { challenge: string; registration: RegistrationEncoded; } | null = null;
-  signature: string = '';
+  ecdsaWallet: ethers.Wallet | null = null;
 }

@@ -5,8 +5,11 @@ import { useEffect } from "react";
 import { WebauthnSigner } from "./utils/userop";
 import { Client, Presets } from "userop";
 import { SmartAccount } from "smart-accounts/src/userop-builder";
+import { SessionKeySigner } from "smart-accounts/src/sessionkey";
 
 import { Heading, Center, Box, Button, Stack, StackDivider, Text, Wrap, WrapItem } from "@chakra-ui/react";
+import { BigNumber, ethers } from "ethers";
+import { hexZeroPad } from "ethers/lib/utils";
 
 const App = observer(() => {
   const { base } = useStore();
@@ -25,21 +28,26 @@ const App = observer(() => {
   const chainId = 4690;
   const entrypoint = "0xc3527348De07d591c9d567ce1998eFA2031B8675";
   const webauthnValidator = "0xe2C03A87C78783d85C263B020E9AeFDa3525d69c";
-  const accountFactory = "0x6D7746E6fFfaddC9E71f7f633b85A1053EABdc10";
+  const sessionKeyValidator = "0x9c0bCB161986d50013783003FDef76f1d3548F3A";
+  const accountFactory = "0xdC0a3eF76617794a944BAA1A21e863b1d9d94d8C";
+  const nftAddr = "0xA3Ce183b2EA38053f85A160857E6f6A8C10EF5f7";
   const rpc = "https://babel-api.testnet.iotex.io";
   const bundler = "https://bundler.testnet.w3bstream.com";
   const paymaster = "https://paymaster.testnet.w3bstream.com/rpc/d98ecac885f4406d87517263b83cb237";
 
   useEffect(() => {
     const storedKeyJson = localStorage.getItem("smart-accounts:key");
-    if (storedKeyJson != null) {
+    if (storedKeyJson) {
       base.storedPasskeys = JSON.parse(storedKeyJson);
       base.stage = 1;
     }
     const account = localStorage.getItem(`smart-accounts:account:${chainId}`);
-    if (account != null) {
+    if (account) {
       base.account = account;
       base.stage = 2;
+    }
+    if (base.ecdsaWallet) {
+      base.stage = 3;
     }
   }, [base]);
 
@@ -91,6 +99,107 @@ const App = observer(() => {
     }
   };
 
+  const createSessionKey = async () => {
+    if (!base.storedPasskeys || !base.account) {
+      throw Error('create passkeys or account first');
+    }
+    base.creatingSessionKey = true;
+    try {
+      base.ecdsaWallet = ethers.Wallet.createRandom();
+
+      const signer = new WebauthnSigner(
+        base.storedPasskeys.registration,
+        webauthnValidator
+      );
+
+      const client = await Client.init(rpc, {
+        entryPoint: entrypoint,
+        overrideBundlerRpc: bundler,
+      });
+      const accountBuilder = await SmartAccount.init(signer, rpc, {
+        overrideBundlerRpc: bundler,
+        entryPoint: entrypoint,
+        factory: accountFactory,
+        paymasterMiddleware: Presets.Middleware.verifyingPaymaster(
+          paymaster,
+          { "type": "payg" }
+        ),
+      });
+
+      const validAfter = Math.floor(new Date().getTime() / 1000);
+      // three hours
+      const validUntil = validAfter + 10800;
+
+      const validatorData = ethers.utils.solidityPack(
+        ["bytes20", "bytes6", "bytes6"],
+        [base.ecdsaWallet.address , hexZeroPad(BigNumber.from(validUntil).toHexString(), 6), hexZeroPad(BigNumber.from(validAfter).toHexString(), 6)]
+      )
+
+      const enableValidator = new ethers.utils.Interface(["function enableValidator(address,bytes)"]);
+      const enableValidatorCallData = enableValidator.encodeFunctionData("enableValidator", [
+        sessionKeyValidator,
+        validatorData 
+      ]);
+      const execute = new ethers.utils.Interface(["function execute(address,uint256,bytes)"]);
+      const executeCallData = execute.encodeFunctionData("execute", [
+        base.account,
+        0,
+        enableValidatorCallData 
+      ]);
+      accountBuilder.setCallData(executeCallData);
+
+      const response = await client.sendUserOperation(accountBuilder);
+      base.messages.push(`create session key ophash: ${response.userOpHash}`);
+      const userOperationEvent = await response.wait();
+      base.messages.push(`create session key txhash: ${userOperationEvent?.transactionHash}`);
+      base.stage = 3;
+    } finally {
+      base.creatingSessionKey = false;
+    }
+  }
+
+  const mintNFT = async () => {
+    if (!base.storedPasskeys || !base.account || !base.ecdsaWallet) {
+      throw Error('create passkeys or account first');
+    }
+    base.mintingNFT = true;
+    try {
+      const signer = new SessionKeySigner(
+        base.ecdsaWallet,
+        sessionKeyValidator
+      );
+
+      const client = await Client.init(rpc, {
+        entryPoint: entrypoint,
+        overrideBundlerRpc: bundler,
+      });
+      const accountBuilder = await SmartAccount.new(base.account, signer, rpc, {
+        overrideBundlerRpc: bundler,
+        entryPoint: entrypoint,
+        factory: accountFactory,
+        paymasterMiddleware: Presets.Middleware.verifyingPaymaster(
+          paymaster,
+          { "type": "payg" }
+        ),
+      });
+      const execute = new ethers.utils.Interface(["function execute(address,uint256,bytes)"]);
+      const executeCallData = execute.encodeFunctionData("execute", [
+        nftAddr,
+        0,
+        "0x1249c58b" 
+      ]);
+      accountBuilder.setCallData(executeCallData);
+
+      const response = await client.sendUserOperation(accountBuilder);
+      base.messages.push(`mint nft ophash: ${response.userOpHash}`);
+      const userOperationEvent = await response.wait();
+      base.messages.push(`mint nft txhash: ${userOperationEvent?.transactionHash}`);
+      base.stage = 3;
+    } finally {
+      base.mintingNFT = false;
+    }
+  }
+
   return (
     <Center p="10">
       <Box borderWidth='1px' borderRadius='lg' p='6'>
@@ -107,6 +216,9 @@ const App = observer(() => {
               <Text>
                 Created Account: {base.account? ( base.account ) : 'None'}
               </Text>
+              <Text>
+                Session key: {base.ecdsaWallet? ( base.ecdsaWallet.address ) : 'None'}
+              </Text>
             </Box>
           </Box>
           <Box p='2'>
@@ -114,7 +226,7 @@ const App = observer(() => {
               Message
             </Heading>
             <Box paddingTop='3'>
-              {base.messages.map((message) => <Text>{message}</Text>)}
+              {base.messages.map((message, i) => <Text key={"message-" + i}>{message}</Text>)}
             </Box>
           </Box>
           <Box p='2'>
@@ -129,12 +241,12 @@ const App = observer(() => {
               }
               {base.stage == 2 &&
               <WrapItem>
-                <Button isLoading={base.creatingSessionKey} loadingText="Creating session key" colorScheme='linkedin'>Create Session Key</Button>
+                <Button isLoading={base.creatingSessionKey} loadingText="Creating session key" colorScheme='linkedin' onClick={createSessionKey}>Create Session Key</Button>
               </WrapItem>
               }
               {base.stage == 3 &&
               <WrapItem>
-                <Button isLoading={base.mintingNFT} loadingText="Minting nft" colorScheme='linkedin'>Mint NFT with Session Key</Button>
+                <Button isLoading={base.mintingNFT} loadingText="Minting nft" colorScheme='linkedin' onClick={mintNFT}>Mint NFT with Session Key</Button>
               </WrapItem>
               }
             </Wrap>
