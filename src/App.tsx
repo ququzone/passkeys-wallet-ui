@@ -7,7 +7,7 @@ import { Client, Presets } from "userop";
 import { SmartAccount } from "smart-accounts/src/userop-builder";
 import { SessionKeySigner } from "smart-accounts/src/sessionkey";
 
-import { Heading, Center, Box, Button, Stack, StackDivider, Text, Wrap, WrapItem } from "@chakra-ui/react";
+import { Heading, Center, Box, Button, Stack, StackDivider, Text, Wrap, WrapItem, Link, VStack } from "@chakra-ui/react";
 import { BigNumber, ethers } from "ethers";
 import { hexZeroPad } from "ethers/lib/utils";
 
@@ -88,9 +88,15 @@ const App = observer(() => {
       // const userop = await accountBuilder.buildOp(entrypoint, chainId);
       // console.log(userop);
       const response = await client.sendUserOperation(accountBuilder);
-      base.messages.push(`create account ophash: ${response.userOpHash}`);
+      base.messages.push({text: `create account opHash: ${response.userOpHash}`});
       const userOperationEvent = await response.wait();
-      base.messages.push(`create account txhash: ${userOperationEvent?.transactionHash}`);
+      base.messages.push({
+        text: 'create account txHash: ',
+        link: {
+          text: userOperationEvent!.transactionHash,
+          href: `https://testnet.iotexscan.io/tx/${userOperationEvent?.transactionHash}`
+        }
+      });
       localStorage.setItem(`smart-accounts:account:${chainId}`, accountBuilder.getSender());
       base.account = accountBuilder.getSender();
       base.stage = 2;
@@ -149,9 +155,15 @@ const App = observer(() => {
       accountBuilder.setCallData(executeCallData);
 
       const response = await client.sendUserOperation(accountBuilder);
-      base.messages.push(`create session key ophash: ${response.userOpHash}`);
+      base.messages.push({text: `create session key opHash: ${response.userOpHash}`});
       const userOperationEvent = await response.wait();
-      base.messages.push(`create session key txhash: ${userOperationEvent?.transactionHash}`);
+      base.messages.push({
+        text: 'create session key txHash: ',
+        link: {
+          text: userOperationEvent!.transactionHash,
+          href: `https://testnet.iotexscan.io/tx/${userOperationEvent?.transactionHash}`
+        }
+      });
       base.stage = 3;
     } finally {
       base.creatingSessionKey = false;
@@ -191,9 +203,15 @@ const App = observer(() => {
       accountBuilder.setCallData(executeCallData);
 
       const response = await client.sendUserOperation(accountBuilder);
-      base.messages.push(`mint nft ophash: ${response.userOpHash}`);
+      base.messages.push({text: `mint nft opHash: ${response.userOpHash}`});
       const userOperationEvent = await response.wait();
-      base.messages.push(`mint nft txhash: ${userOperationEvent?.transactionHash}`);
+      base.messages.push({
+        text: 'mint nft txHash: ',
+        link: {
+          text: userOperationEvent!.transactionHash,
+          href: `https://testnet.iotexscan.io/tx/${userOperationEvent?.transactionHash}`
+        }
+      });
       base.stage = 3;
     } finally {
       base.mintingNFT = false;
@@ -214,7 +232,7 @@ const App = observer(() => {
                 Passkeys: {base.storedPasskeys? ( base.storedPasskeys.registration.credential.id ) : 'None'}
               </Text>
               <Text>
-                Created Account: {base.account? ( base.account ) : 'None'}
+                Created Account: {base.account? ( <Link color="teal.500" isExternal href={"https://testnet.iotexscan.io/address/" + base.account}>{base.account}</Link> ) : 'None'}
               </Text>
               <Text>
                 Session key: {base.ecdsaWallet? ( base.ecdsaWallet.address ) : 'None'}
@@ -226,7 +244,9 @@ const App = observer(() => {
               Message
             </Heading>
             <Box paddingTop='3'>
-              {base.messages.map((message, i) => <Text key={"message-" + i}>{message}</Text>)}
+              {base.messages.map((message, i) => 
+                <Text key={"message-" + i}>{message.text} {message.link && <Link color="teal.500" isExternal href={message.link.href}>{message.link.text}</Link>}</Text>)
+              }
             </Box>
           </Box>
           <Box p='2'>
@@ -236,20 +256,25 @@ const App = observer(() => {
               </WrapItem>
               {base.stage == 1 &&
               <WrapItem>
-                <Button isLoading={base.creatingAccount} loadingText="Creating account" colorScheme='linkedin' onClick={createAccount}>Create Passkeys Account</Button>
+                <Button isLoading={base.creatingAccount} loadingText="Creating Passkeys Account" colorScheme='red' onClick={createAccount}>Create Passkeys Account</Button>
               </WrapItem>
               }
               {base.stage == 2 &&
               <WrapItem>
-                <Button isLoading={base.creatingSessionKey} loadingText="Creating session key" colorScheme='linkedin' onClick={createSessionKey}>Create Session Key</Button>
+                <Button isLoading={base.creatingSessionKey} loadingText="Creating Session Key" colorScheme='orange' onClick={createSessionKey}>Create Session Key</Button>
               </WrapItem>
               }
               {base.stage == 3 &&
               <WrapItem>
-                <Button isLoading={base.mintingNFT} loadingText="Minting nft" colorScheme='linkedin' onClick={mintNFT}>Mint NFT with Session Key</Button>
+                <Button isLoading={base.mintingNFT} loadingText="Minting NFT with Session Key" colorScheme='yellow' onClick={mintNFT}>Mint NFT with Session Key</Button>
               </WrapItem>
               }
             </Wrap>
+          </Box>
+          <Box p='2'>
+            <Stack direction='row' justify='center'>
+              <Link isExternal color="teal.500" href="https://github.com/ququzone/smart-accounts">Github</Link>
+            </Stack>
           </Box>
         </Stack>
       </Box>
