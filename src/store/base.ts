@@ -6,6 +6,10 @@ export class BaseStore {
     makeAutoObservable(this);
   }
 
+  stage = 0;
+  creatingAccount = false;
+  creatingSessionKey = false;
+  mintingNFT = false;
   account = '';
   storedPasskeys: { challenge: string; registration: RegistrationEncoded; } | null = null;
   signature: string = '';

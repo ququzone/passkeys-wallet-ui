@@ -1,11 +1,12 @@
 import { observer } from "mobx-react-lite";
 import { useStore } from "./store";
-import "./App.css";
 import { createPasskeyCredential } from "./utils/webauthn";
 import { useEffect } from "react";
 import { WebauthnSigner } from "./utils/userop";
 import { Client, Presets } from "userop";
 import { SmartAccount } from "smart-accounts/src/userop-builder";
+
+import { Heading, Center, Box, Button, Stack, StackDivider, Text, Wrap, WrapItem } from "@chakra-ui/react";
 
 const App = observer(() => {
   const { base } = useStore();
@@ -33,10 +34,12 @@ const App = observer(() => {
     const storedKeyJson = localStorage.getItem("smart-accounts:key");
     if (storedKeyJson != null) {
       base.storedPasskeys = JSON.parse(storedKeyJson);
+      base.stage = 1;
     }
     const account = localStorage.getItem(`smart-accounts:account:${chainId}`);
     if (account != null) {
       base.account = account;
+      base.stage = 2;
     }
   }, [base]);
 
@@ -45,6 +48,7 @@ const App = observer(() => {
     localStorage.setItem("smart-accounts:key", JSON.stringify(credential));
     localStorage.removeItem(`smart-accounts:account:${chainId}`);
     base.account = '';
+    base.stage = 1;
     base.storedPasskeys = credential;
   };
 
@@ -52,53 +56,85 @@ const App = observer(() => {
     if (!base.storedPasskeys) {
       throw Error('create passkeys first');
     }
-    const signer = new WebauthnSigner(
-      base.storedPasskeys.registration,
-      webauthnValidator
-    );
+    base.creatingAccount = true
+    try {
+      const signer = new WebauthnSigner(
+        base.storedPasskeys.registration,
+        webauthnValidator
+      );
 
-    const client = await Client.init(rpc, {
-      entryPoint: entrypoint,
-      overrideBundlerRpc: bundler,
-    });
-    const accountBuilder = await SmartAccount.init(signer, rpc, {
-      overrideBundlerRpc: bundler,
-      entryPoint: entrypoint,
-      factory: accountFactory,
-      paymasterMiddleware: Presets.Middleware.verifyingPaymaster(
-        paymaster,
-        { "type": "payg" }
-      ),
-    });
+      const client = await Client.init(rpc, {
+        entryPoint: entrypoint,
+        overrideBundlerRpc: bundler,
+      });
+      const accountBuilder = await SmartAccount.init(signer, rpc, {
+        overrideBundlerRpc: bundler,
+        entryPoint: entrypoint,
+        factory: accountFactory,
+        paymasterMiddleware: Presets.Middleware.verifyingPaymaster(
+          paymaster,
+          { "type": "payg" }
+        ),
+      });
 
-    // const userop = await accountBuilder.buildOp(entrypoint, chainId);
-    // console.log(userop);
-    const response = await client.sendUserOperation(accountBuilder);
-    console.log(`create account ophash: ${response.userOpHash}`);
-    const userOperationEvent = await response.wait();
-    console.log(`create account txhash: ${userOperationEvent?.transactionHash}`);
-    localStorage.setItem(`smart-accounts:account:${chainId}`, accountBuilder.getSender());
-    base.account = accountBuilder.getSender();
+      // const userop = await accountBuilder.buildOp(entrypoint, chainId);
+      // console.log(userop);
+      const response = await client.sendUserOperation(accountBuilder);
+      console.log(`create account ophash: ${response.userOpHash}`);
+      const userOperationEvent = await response.wait();
+      console.log(`create account txhash: ${userOperationEvent?.transactionHash}`);
+      localStorage.setItem(`smart-accounts:account:${chainId}`, accountBuilder.getSender());
+      base.account = accountBuilder.getSender();
+      base.stage = 2;
+      base.creatingAccount = false;
+    } catch(e) {
+      base.creatingAccount = false;
+    }
   };
 
   return (
-    <>
-      <h1>Passkeys demo</h1>
-      <p>
-        Created Passkeys: {base.storedPasskeys? ( base.storedPasskeys.registration.credential.id ) : 'None'}
-      </p>
-      <p>
-        Created Account: {base.account? ( base.account ) : 'None'}
-      </p>
-      <div className="card">
-        <p>
-          <button onClick={createPasskey}>Create Passkeys</button>
-        </p>
-        <p>
-          <button onClick={createAccount}>Create Passkeys Account</button>
-        </p>
-      </div>
-    </>
+    <Center p="10">
+      <Box borderWidth='1px' borderRadius='lg' p='6'>
+        <Heading size='md'>Passkeys Account Abstraction demo</Heading>
+        <Stack divider={<StackDivider />} spacing='4' paddingTop='6'>
+          <Box p='2'>
+            <Heading size='xs' textTransform='uppercase'>
+              Account
+            </Heading>
+            <Box paddingTop='3'>
+              <Text>
+                Passkeys: {base.storedPasskeys? ( base.storedPasskeys.registration.credential.id ) : 'None'}
+              </Text>
+              <Text>
+                Created Account: {base.account? ( base.account ) : 'None'}
+              </Text>
+            </Box>
+          </Box>
+          <Box p='2'>
+            <Wrap spacing={4}>
+              <WrapItem>
+                <Button colorScheme='linkedin' onClick={createPasskey}>Create Passkeys</Button>
+              </WrapItem>
+              {base.stage == 1 &&
+              <WrapItem>
+                <Button isLoading={base.creatingAccount} loadingText="Creating account" colorScheme='linkedin' onClick={createAccount}>Create Passkeys Account</Button>
+              </WrapItem>
+              }
+              {base.stage == 2 &&
+              <WrapItem>
+                <Button isLoading={base.creatingSessionKey} loadingText="Creating session key" colorScheme='linkedin'>Create Session Key</Button>
+              </WrapItem>
+              }
+              {base.stage == 3 &&
+              <WrapItem>
+                <Button isLoading={base.mintingNFT} loadingText="Minting nft" colorScheme='linkedin'>Mint NFT with Session Key</Button>
+              </WrapItem>
+              }
+            </Wrap>
+          </Box>
+        </Stack>
+      </Box>
+    </Center>
   );
 });
 
