@@ -7,7 +7,7 @@ import { Client, Presets } from "userop";
 import { SmartAccount } from "smart-accounts/src/userop-builder";
 import { SessionKeySigner } from "smart-accounts/src/sessionkey";
 
-import { Heading, Center, Box, Button, Stack, StackDivider, Text, Wrap, WrapItem, Link, VStack } from "@chakra-ui/react";
+import { Heading, Center, Box, Button, Stack, StackDivider, Text, Wrap, WrapItem, Link } from "@chakra-ui/react";
 import { BigNumber, ethers } from "ethers";
 import { hexZeroPad } from "ethers/lib/utils";
 
