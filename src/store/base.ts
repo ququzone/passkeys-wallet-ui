@@ -11,6 +11,7 @@ export class BaseStore {
   creatingSessionKey = false;
   mintingNFT = false;
   account = '';
+  messages: string[] = [];
   storedPasskeys: { challenge: string; registration: RegistrationEncoded; } | null = null;
   signature: string = '';
 }

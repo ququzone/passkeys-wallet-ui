@@ -80,14 +80,13 @@ const App = observer(() => {
       // const userop = await accountBuilder.buildOp(entrypoint, chainId);
       // console.log(userop);
       const response = await client.sendUserOperation(accountBuilder);
-      console.log(`create account ophash: ${response.userOpHash}`);
+      base.messages.push(`create account ophash: ${response.userOpHash}`);
       const userOperationEvent = await response.wait();
-      console.log(`create account txhash: ${userOperationEvent?.transactionHash}`);
+      base.messages.push(`create account txhash: ${userOperationEvent?.transactionHash}`);
       localStorage.setItem(`smart-accounts:account:${chainId}`, accountBuilder.getSender());
       base.account = accountBuilder.getSender();
       base.stage = 2;
-      base.creatingAccount = false;
-    } catch(e) {
+    } finally {
       base.creatingAccount = false;
     }
   };
@@ -108,6 +107,14 @@ const App = observer(() => {
               <Text>
                 Created Account: {base.account? ( base.account ) : 'None'}
               </Text>
+            </Box>
+          </Box>
+          <Box p='2'>
+            <Heading size='xs' textTransform='uppercase'>
+              Message
+            </Heading>
+            <Box paddingTop='3'>
+              {base.messages.map((message) => <Text>{message}</Text>)}
             </Box>
           </Box>
           <Box p='2'>
