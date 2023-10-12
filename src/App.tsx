@@ -252,7 +252,10 @@ const App = observer(() => {
           <Box p='2'>
             <Wrap spacing={4}>
               <WrapItem>
-                <Button colorScheme='linkedin' onClick={createPasskey}>Create Passkeys</Button>
+                {base.stage == 1?
+                  <Button colorScheme="blue" onClick={createPasskey}>Create Passkeys</Button> :
+                  <Button colorScheme="gray" onClick={createPasskey}>Create Passkeys</Button>
+                }
               </WrapItem>
               {base.stage == 1 &&
               <WrapItem>
@@ -273,7 +276,7 @@ const App = observer(() => {
           </Box>
           <Box p='2'>
             <Stack direction='row' justify='center'>
-              <Link isExternal color="teal.500" href="https://github.com/ququzone/smart-accounts">Github</Link>
+              <Text>Made by <Link isExternal color="teal.500" href="https://github.com/ququzone/smart-accounts">Smart Accounts</Link></Text>
             </Stack>
           </Box>
         </Stack>
