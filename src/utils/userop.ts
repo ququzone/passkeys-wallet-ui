@@ -1,6 +1,6 @@
 import { RegistrationEncoded } from "@passwordless-id/webauthn/dist/esm/types";
 import { BytesLike } from "ethers";
-import { Signer } from "smart-accounts/src/userop-builder";
+import { Signer } from "smart-accounts";
 import { authentication, getPublicKeyFromBytes } from "./webauthn";
 
 export class WebauthnSigner implements Signer {

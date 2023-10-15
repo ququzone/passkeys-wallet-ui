@@ -4,8 +4,8 @@ import { createPasskeyCredential } from "./utils/webauthn";
 import { useEffect } from "react";
 import { WebauthnSigner } from "./utils/userop";
 import { Client, Presets } from "userop";
-import { SmartAccount } from "smart-accounts/src/userop-builder";
-import { SessionKeySigner } from "smart-accounts/src/sessionkey";
+import { SmartAccount } from "smart-accounts";
+import { SessionKeySigner } from "smart-accounts";
 
 import { Heading, Center, Box, Button, Stack, StackDivider, Text, Wrap, WrapItem, Link } from "@chakra-ui/react";
 import { BigNumber, ethers } from "ethers";
