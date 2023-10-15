@@ -3551,10 +3551,10 @@ slash@^3.0.0:
   resolved "https://registry.yarnpkg.com/slash/-/slash-3.0.0.tgz#6539be870c165adbd5240220dbe361f1bc4d4634"
   integrity sha512-g9Q1haeby36OSStwb4ntCGGGaKsaVSjQ68fBxoQcutl5fS1vuY18H3wSt3jFyFtrkx+Kz0V1G85A4MyAdDMi2Q==
 
-smart-accounts@^0.1.9:
-  version "0.1.9"
-  resolved "https://registry.yarnpkg.com/smart-accounts/-/smart-accounts-0.1.9.tgz#01734e377119e448e3ef5ef7ff6037ba74e450c8"
-  integrity sha512-Z4XyDlRBS1JQ8fu678ouvp6xw7Z5kq15YI66bLCT7IzLzwAurcWaFOjFXVd9WeoFILLaqR5mItYKae8ieaP+IA==
+smart-accounts@^0.1.12:
+  version "0.1.12"
+  resolved "https://registry.yarnpkg.com/smart-accounts/-/smart-accounts-0.1.12.tgz#4d64e1fe293da34e37da11a4830cecdb8e7f2500"
+  integrity sha512-Kuw0xizoJo/Z2I50A1vLLYlL5jE1c1wqhRY0f/sv3CIzHKX2cavLoWx3/DIaqHkhumly+eNUdz+kg4Y/VfE7Bg==
   dependencies:
     "@account-abstraction/contracts" "^0.6.0"
     "@openzeppelin/contracts" "^4.9.3"
