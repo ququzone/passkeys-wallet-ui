@@ -23,4 +23,5 @@ export class BaseStore {
   messages: Message[] = [];
   storedPasskeys: { challenge: string; registration: RegistrationEncoded; } | null = null;
   ecdsaWallet: ethers.Wallet | null = null;
+  parent = true;
 }

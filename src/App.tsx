@@ -8,6 +8,7 @@ import { SmartAccount } from "smart-accounts";
 import { SessionKeySigner } from "smart-accounts";
 
 import { Heading, Center, Box, Button, Stack, StackDivider, Text, Wrap, WrapItem, Link } from "@chakra-ui/react";
+import { FaGoogle } from "react-icons/fa";
 import { BigNumber, ethers } from "ethers";
 import { hexZeroPad } from "ethers/lib/utils";
 
@@ -33,7 +34,8 @@ const App = observer(() => {
   const nftAddr = "0xA3Ce183b2EA38053f85A160857E6f6A8C10EF5f7";
   const rpc = "https://babel-api.testnet.iotex.io";
   const bundler = "https://bundler.testnet.w3bstream.com";
-  const paymaster = "https://paymaster.testnet.w3bstream.com/rpc/d98ecac885f4406d87517263b83cb237";
+  const paymaster = "http://localhost:8888/rpc/1234567890";
+  //const paymaster = "https://paymaster.testnet.w3bstream.com/rpc/d98ecac885f4406d87517263b83cb237";
 
   useEffect(() => {
     const storedKeyJson = localStorage.getItem("smart-accounts:key");
@@ -55,6 +57,7 @@ const App = observer(() => {
     const credential = await createPasskeyCredential("SmartAccounts");
     localStorage.setItem("smart-accounts:key", JSON.stringify(credential));
     localStorage.removeItem(`smart-accounts:account:${chainId}`);
+    sessionStorage
     base.account = '';
     base.stage = 1;
     base.storedPasskeys = credential;
@@ -218,6 +221,59 @@ const App = observer(() => {
     }
   }
 
+
+  useEffect(() => {
+    window.setInterval(() => {
+      try {
+        const currentUrl = window.location.href;
+        const params = new URL(currentUrl);
+        if(params.hash.startsWith("#id_token")) {
+          base.parent = false;
+          localStorage.setItem('zk:idToken', params.hash.substring(10));
+          window.close()
+        }
+      } catch (error) {
+        // eslint-ignore-line
+      }
+    }, 700);
+  });
+  useEffect(() => {
+    window.setInterval(() => {
+      try {
+        const idToken = localStorage.getItem('zk:idToken');
+        if(base.parent && idToken != '') {
+          // TODO process prove
+          console.log('process zk prove...');
+          localStorage.setItem('zk:idToken', '');
+        }
+      } catch (error) {
+        // eslint-ignore-line
+      }
+    }, 700);
+  });
+
+  const signGoogle = async () => {
+    // TODO generate nonce
+    const params = new URLSearchParams();
+    params.append('client_id', '73560409000-bukjdqgu0an9jrhastgucspohtjd0ehd.apps.googleusercontent.com');
+    params.append('redirect_uri', "http://localhost:5173/");
+    params.append('response_type', 'id_token');
+    params.append('scope', 'openid');
+    params.append('nonce', "1");
+
+    const authUrl = `https://accounts.google.com/o/oauth2/v2/auth?${params.toString()}`;
+
+    const width = 500;
+    const height = 500;
+    const left = window.screenX + (window.outerWidth - width) / 2;
+    const top = window.screenY + (window.outerHeight - height) / 2.5;
+    window.open(
+      authUrl,
+      "Connect",
+      `width=${width},height=${height},left=${left},top=${top},popup=true`,
+    );
+  }
+
   return (
     <Center p="10">
       <Box borderWidth='1px' borderRadius='lg' p='6'>
@@ -272,6 +328,18 @@ const App = observer(() => {
                 <Button isLoading={base.mintingNFT} loadingText="Minting NFT with Session Key" colorScheme='yellow' onClick={mintNFT}>Mint NFT with Session Key</Button>
               </WrapItem>
               }
+            </Wrap>
+          </Box>
+
+          <Box p='2'>
+            <Wrap spacing={4}>
+              <WrapItem>
+                <Button leftIcon={<FaGoogle />} onClick={signGoogle}>
+                  <Center>
+                    <Text>Sign in with Google</Text>
+                  </Center>
+                </Button>
+              </WrapItem>
             </Wrap>
           </Box>
           <Box p='2'>
