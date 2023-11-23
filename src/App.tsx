@@ -229,7 +229,11 @@ const App = observer(() => {
         const params = new URL(currentUrl);
         if(params.hash.startsWith("#id_token")) {
           base.parent = false;
-          localStorage.setItem('zk:idToken', params.hash.substring(10));
+          let token = params.hash.substring(10);
+          if (token.indexOf('&') > 0) {
+            token = token.substring(0, token.indexOf('&'));
+          }
+          localStorage.setItem('zk:idToken', token);
           window.close()
         }
       } catch (error) {
@@ -254,12 +258,15 @@ const App = observer(() => {
 
   const signGoogle = async () => {
     // TODO generate nonce
+    const zkSessionWallet = ethers.Wallet.createRandom();
+    localStorage.setItem('zk:session', zkSessionWallet.privateKey);
+
     const params = new URLSearchParams();
     params.append('client_id', '73560409000-bukjdqgu0an9jrhastgucspohtjd0ehd.apps.googleusercontent.com');
     params.append('redirect_uri', "http://localhost:5173/");
     params.append('response_type', 'id_token');
     params.append('scope', 'openid');
-    params.append('nonce', "1");
+    params.append('nonce', zkSessionWallet.address);
 
     const authUrl = `https://accounts.google.com/o/oauth2/v2/auth?${params.toString()}`;
 
