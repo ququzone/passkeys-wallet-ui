@@ -9,7 +9,7 @@ import { SessionKeySigner } from "smart-accounts";
 
 import { Heading, Center, Box, Button, Stack, StackDivider, Text, Wrap, WrapItem, Link } from "@chakra-ui/react";
 import { FaGoogle } from "react-icons/fa";
-import { BigNumber, ethers } from "ethers";
+import { BigNumber, ethers, providers } from "ethers";
 import { hexZeroPad } from "ethers/lib/utils";
 
 const App = observer(() => {
@@ -34,8 +34,7 @@ const App = observer(() => {
   const nftAddr = "0xA3Ce183b2EA38053f85A160857E6f6A8C10EF5f7";
   const rpc = "https://babel-api.testnet.iotex.io";
   const bundler = "https://bundler.testnet.w3bstream.com";
-  const paymaster = "http://localhost:8888/rpc/1234567890";
-  //const paymaster = "https://paymaster.testnet.w3bstream.com/rpc/d98ecac885f4406d87517263b83cb237";
+  const paymaster = "https://paymaster.testnet.w3bstream.com/rpc/a0a7767f2aaa4db1b385f71dd82e55ea";
 
   useEffect(() => {
     const storedKeyJson = localStorage.getItem("smart-accounts:key");
@@ -88,6 +87,16 @@ const App = observer(() => {
         ),
       });
 
+      // TODO: roughly claim gas, need optimize workflow
+      const account = accountBuilder.getSender();
+      try {
+        const paymasterApi = new providers.JsonRpcProvider(paymaster)
+        // claim gas
+        await paymasterApi.send('pm_requestGas', [account])
+      } catch (e) {
+          console.log(e);
+      }
+
       // const userop = await accountBuilder.buildOp(entrypoint, chainId);
       // console.log(userop);
       const response = await client.sendUserOperation(accountBuilder);
@@ -101,7 +110,7 @@ const App = observer(() => {
         }
       });
       localStorage.setItem(`smart-accounts:account:${chainId}`, accountBuilder.getSender());
-      base.account = accountBuilder.getSender();
+      base.account = account;
       base.stage = 2;
     } finally {
       base.creatingAccount = false;
@@ -134,6 +143,15 @@ const App = observer(() => {
           { "type": "payg" }
         ),
       });
+
+      const account = accountBuilder.getSender();
+      try {
+        const paymasterApi = new providers.JsonRpcProvider(paymaster)
+        // claim gas
+        await paymasterApi.send('pm_requestGas', [account])
+      } catch (e) {
+          console.log(e);
+      }
 
       const validAfter = Math.floor(new Date().getTime() / 1000);
       // three hours
@@ -204,6 +222,15 @@ const App = observer(() => {
         "0x1249c58b" 
       ]);
       accountBuilder.setCallData(executeCallData);
+
+      const account = accountBuilder.getSender();
+      try {
+        const paymasterApi = new providers.JsonRpcProvider(paymaster)
+        // claim gas
+        await paymasterApi.send('pm_requestGas', [account])
+      } catch (e) {
+          console.log(e);
+      }
 
       const response = await client.sendUserOperation(accountBuilder);
       base.messages.push({text: `mint nft opHash: ${response.userOpHash}`});
