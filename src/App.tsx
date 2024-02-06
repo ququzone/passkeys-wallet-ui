@@ -33,7 +33,7 @@ const App = observer(() => {
   const nftAddr = "0xA3Ce183b2EA38053f85A160857E6f6A8C10EF5f7";
   const rpc = "https://babel-api.testnet.iotex.io";
   const bundler = "https://bundler.testnet.w3bstream.com";
-  const paymaster = "https://paymaster.testnet.w3bstream.com/rpc/d98ecac885f4406d87517263b83cb237";
+  const paymaster = "https://paymaster.testnet.w3bstream.com/rpc/a0a7767f2aaa4db1b385f71dd82e55ea";
 
   useEffect(() => {
     const storedKeyJson = localStorage.getItem("smart-accounts:key");
