@@ -364,8 +364,7 @@ const App = observer(() => {
               }
             </Wrap>
           </Box>
-
-          <Box p='2'>
+          {/* <Box p='2'>
             <Wrap spacing={4}>
               <WrapItem>
                 <Button leftIcon={<FaGoogle />} onClick={signGoogle}>
@@ -375,7 +374,7 @@ const App = observer(() => {
                 </Button>
               </WrapItem>
             </Wrap>
-          </Box>
+          </Box> */}
           <Box p='2'>
             <Stack direction='row' justify='center'>
               <Text>Made by <Link isExternal color="teal.500" href="https://github.com/ququzone/smart-accounts">Smart Accounts</Link></Text>
